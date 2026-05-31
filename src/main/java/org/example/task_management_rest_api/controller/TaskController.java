@@ -42,6 +42,7 @@ public class TaskController {
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
+        task.setCompleted(request.isCompleted());
         return taskService.createTask(task);
     }
 
@@ -50,6 +51,7 @@ public class TaskController {
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
+        task.setCompleted(request.isCompleted());
         return taskService.updateTask(id, task);
     }
 

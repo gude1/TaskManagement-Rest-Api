@@ -5,43 +5,48 @@ import org.example.task_management_rest_api.repository.TaskRespository;
 import java.util.List;
 import org.example.task_management_rest_api.exception.TaskNotFoundException;
 import org.example.task_management_rest_api.model.Task;
+import org.example.task_management_rest_api.model.User;
 import org.springframework.stereotype.Service;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class TaskService {
     private final TaskRespository taskRespository;
+    private final UserService userService;
 
-    public TaskService(TaskRespository taskRespository) {
+    public TaskService(TaskRespository taskRespository, UserService userService) {
         this.taskRespository = taskRespository;
+        this.userService = userService;
     }
 
-    public ResponseEntity<List<Task>> getAllTasks() {
-        return new ResponseEntity<List<Task>>(taskRespository.findAll(), HttpStatus.OK);
+    public List<Task> getAllTasksByUserId(Long userId) {
+        userService.getUserById(userId);
+        return taskRespository.findByUser_Id(userId);
     }
 
-    public ResponseEntity<Task> getTaskById(Long id) {
-        return new ResponseEntity<Task>(taskRespository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found")), HttpStatus.OK);
+    public Task getTaskById(Long userId, Long taskId) {
+        userService.getUserById(userId);
+        return taskRespository.findByIdAndUser_Id(taskId, userId)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
-    public ResponseEntity<Task> createTask(Task task) {
-        return new ResponseEntity<Task>(taskRespository.save(task), HttpStatus.CREATED);
+    public Task createTask(Long userId, Task task) {
+        User user = userService.getUserById(userId);
+        task.setUser(user);
+        return taskRespository.save(task);
     }
 
-    public ResponseEntity<Task> updateTask(Long id, Task task) {
-        Task existingTask = taskRespository.findById(id)
+    public Task updateTask(Long userId, Long taskId, Task task) {
+        Task existingTask = taskRespository.findByIdAndUser_Id(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
         existingTask.setTitle(task.getTitle());
         existingTask.setDescription(task.getDescription());
         existingTask.setCompleted(task.isCompleted());
-        Task updated = taskRespository.save(existingTask);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        return taskRespository.save(existingTask);
     }
 
-    public ResponseEntity<String> deleteTask(Long id) {
-        taskRespository.deleteById(id);
-        return new ResponseEntity<String>("Task deleted successfully: " + id, HttpStatus.OK);
+    public void deleteTask(Long userId, Long taskId) {
+        Task existingTask = taskRespository.findByIdAndUser_Id(taskId, userId)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+        taskRespository.delete(existingTask);
     }
 }

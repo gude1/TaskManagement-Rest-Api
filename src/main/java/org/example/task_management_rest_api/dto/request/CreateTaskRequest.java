@@ -1,4 +1,4 @@
-package org.example.task_management_rest_api.dto;
+package org.example.task_management_rest_api.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,9 +1,12 @@
 package org.example.task_management_rest_api.controller;
 
 import org.example.task_management_rest_api.dto.request.CreateTaskRequest;
+import org.example.task_management_rest_api.dto.response.PagedResponse;
 import org.example.task_management_rest_api.dto.response.TaskResponse;
 import org.example.task_management_rest_api.model.Task;
 import org.example.task_management_rest_api.service.TaskService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
 import jakarta.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users/{userId}/tasks")
@@ -29,11 +31,13 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TaskResponse>> getAllTasks(@PathVariable Long userId) {
-        List<TaskResponse> tasks = taskService.getAllTasksByUserId(userId).stream()
-                .map(TaskResponse::new)
-                .toList();
-        return ResponseEntity.ok(tasks);
+    public ResponseEntity<PagedResponse<TaskResponse>> getAllTasks(
+            @PathVariable Long userId,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        PagedResponse<TaskResponse> response = PagedResponse.from(
+                taskService.getAllTasksByUserId(userId, pageable),
+                TaskResponse::new);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{taskId}")

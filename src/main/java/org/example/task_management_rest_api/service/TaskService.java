@@ -2,10 +2,11 @@ package org.example.task_management_rest_api.service;
 
 import org.example.task_management_rest_api.repository.TaskRespository;
 
-import java.util.List;
 import org.example.task_management_rest_api.exception.TaskNotFoundException;
 import org.example.task_management_rest_api.model.Task;
 import org.example.task_management_rest_api.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,9 +19,9 @@ public class TaskService {
         this.userService = userService;
     }
 
-    public List<Task> getAllTasksByUserId(Long userId) {
+    public Page<Task> getAllTasksByUserId(Long userId, Pageable pageable) {
         userService.getUserById(userId);
-        return taskRespository.findByUser_Id(userId);
+        return taskRespository.findByUser_Id(userId, pageable);
     }
 
     public Task getTaskById(Long userId, Long taskId) {

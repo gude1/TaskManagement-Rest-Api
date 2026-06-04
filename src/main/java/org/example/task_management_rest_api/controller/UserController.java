@@ -1,11 +1,12 @@
 package org.example.task_management_rest_api.controller;
 
-import java.util.List;
-
 import org.example.task_management_rest_api.dto.request.CreateUserRequest;
+import org.example.task_management_rest_api.dto.response.PagedResponse;
 import org.example.task_management_rest_api.dto.response.UserResponse;
 import org.example.task_management_rest_api.model.User;
 import org.example.task_management_rest_api.service.UserService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,11 +37,12 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers().stream()
-                .map(UserResponse::new)
-                .toList();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<PagedResponse<UserResponse>> getAllUsers(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        PagedResponse<UserResponse> response = PagedResponse.from(
+                userService.getAllUsers(pageable),
+                UserResponse::new);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

@@ -1,11 +1,11 @@
 package org.example.task_management_rest_api.service;
 
-import java.util.List;
-
 import org.example.task_management_rest_api.exception.EmailAlreadyExistsException;
 import org.example.task_management_rest_api.exception.UserNotFoundException;
 import org.example.task_management_rest_api.model.User;
 import org.example.task_management_rest_api.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,8 +23,8 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public User getUserById(Long id) {

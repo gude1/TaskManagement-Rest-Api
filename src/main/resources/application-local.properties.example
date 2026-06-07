@@ -1,0 +1,12 @@
+# Copy this file to application-local.properties and fill in your values.
+# application-local.properties is gitignored and never pushed to GitHub.
+
+# MySQL
+spring.datasource.password=your_mysql_password
+
+# JWT (at least 32 characters)
+jwt.secret=your_jwt_secret_at_least_32_characters_long
+
+# Optional overrides
+# spring.datasource.url=jdbc:mysql://localhost:3306/taskdb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+# spring.datasource.username=root

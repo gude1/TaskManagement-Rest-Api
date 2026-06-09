@@ -10,7 +10,7 @@ A Spring Boot REST API for managing tasks per user. Users sign up, authenticate 
 
 - User signup and login with **BCrypt** password hashing
 - **JWT access tokens** (short-lived) and **refresh tokens** (stored in MySQL, revocable on logout)
-- Task CRUD scoped to a user (`/api/users/{userId}/tasks`)
+- Task CRUD scoped to the authenticated user (`/api/user/tasks`)
 - **Pagination** for task lists
 - Request validation with clear error responses
 - Layered architecture: controllers (DTOs) → services (entities) → repositories (JPA)
@@ -19,15 +19,15 @@ A Spring Boot REST API for managing tasks per user. Users sign up, authenticate 
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Java 25 |
-| Framework | Spring Boot 4.0.6 |
-| Web | Spring Web MVC |
-| Persistence | Spring Data JPA, Hibernate, MySQL |
-| Security | Spring Security, JWT (jjwt 0.12.6), BCrypt |
-| Validation | Jakarta Bean Validation |
-| Build | Maven |
+| Layer       | Technology                                 |
+| ----------- | ------------------------------------------ |
+| Runtime     | Java 25                                    |
+| Framework   | Spring Boot 4.0.6                          |
+| Web         | Spring Web MVC                             |
+| Persistence | Spring Data JPA, Hibernate, MySQL          |
+| Security    | Spring Security, JWT (jjwt 0.12.6), BCrypt |
+| Validation  | Jakarta Bean Validation                    |
+| Build       | Maven                                      |
 
 ---
 
@@ -126,29 +126,29 @@ Authorization: Bearer <accessToken>
 
 ### Token types
 
-| Token | Lifetime (default) | Purpose |
-|-------|-------------------|---------|
-| Access token | 15 minutes | Sent on every protected request |
-| Refresh token | 7 days | Used to obtain a new token pair; stored in DB and revoked on logout |
+| Token         | Lifetime (default) | Purpose                                                             |
+| ------------- | ------------------ | ------------------------------------------------------------------- |
+| Access token  | 15 minutes         | Sent on every protected request                                     |
+| Refresh token | 7 days             | Used to obtain a new token pair; stored in DB and revoked on logout |
 
 ### Typical client flow
 
 ```
 1. POST /api/auth/signup     → create account + receive tokens
-2. GET  /api/auth/me         → get your user id
-3. POST /api/users/{id}/tasks → create tasks (with Bearer token)
+2. GET  /api/auth/me         → get your profile
+3. POST /api/user/tasks      → create tasks (with Bearer token)
 4. POST /api/auth/refresh    → new tokens when access token expires
 5. POST /api/auth/logout     → revoke refresh token
 ```
 
 ### Public vs protected routes
 
-| Public (no token) | Protected (Bearer token) |
-|-------------------|---------------------------|
-| `POST /api/auth/signup` | `GET /api/auth/me` |
-| `POST /api/auth/login` | All `/api/users/{userId}/tasks/**` routes |
-| `POST /api/auth/refresh` | |
-| `POST /api/auth/logout` | |
+| Public (no token)        | Protected (Bearer token)        |
+| ------------------------ | ------------------------------- |
+| `POST /api/auth/signup`  | `GET /api/auth/me`              |
+| `POST /api/auth/login`   | All `/api/user/tasks/**` routes |
+| `POST /api/auth/refresh` |                                 |
+| `POST /api/auth/logout`  |                                 |
 
 ---
 
@@ -170,9 +170,9 @@ Content-Type: application/json
 }
 ```
 
-| Field | Rules |
-|-------|-------|
-| `email` | Required, valid email |
+| Field      | Rules                      |
+| ---------- | -------------------------- |
+| `email`    | Required, valid email      |
 | `password` | Required, 6–100 characters |
 
 **Response `201 Created`:**
@@ -245,20 +245,20 @@ Content-Type: application/json
 
 ### Tasks
 
-All task routes require authentication. Replace `{userId}` with your id from `GET /api/auth/me`.
+All task routes require authentication. Tasks are always scoped to the user from the JWT — you never pass a user id in the URL.
 
 #### List tasks (paginated)
 
 ```http
-GET /api/users/{userId}/tasks?page=0&size=10&sort=id,desc
+GET /api/user/tasks?page=0&size=10&sort=id,desc
 Authorization: Bearer <accessToken>
 ```
 
-| Query param | Default | Description |
-|-------------|---------|-------------|
-| `page` | `0` | Page index (0-based) |
-| `size` | `10` | Items per page |
-| `sort` | `id` | Sort field and direction (e.g. `title,asc`) |
+| Query param | Default | Description                                 |
+| ----------- | ------- | ------------------------------------------- |
+| `page`      | `0`     | Page index (0-based)                        |
+| `size`      | `10`    | Items per page                              |
+| `sort`      | `id`    | Sort field and direction (e.g. `title,asc`) |
 
 **Response `200 OK`:**
 
@@ -284,14 +284,14 @@ Authorization: Bearer <accessToken>
 #### Get task by id
 
 ```http
-GET /api/users/{userId}/tasks/{taskId}
+GET /api/user/tasks/{taskId}
 Authorization: Bearer <accessToken>
 ```
 
 #### Create task
 
 ```http
-POST /api/users/{userId}/tasks
+POST /api/user/tasks
 Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
@@ -304,10 +304,10 @@ Content-Type: application/json
 }
 ```
 
-| Field | Rules |
-|-------|-------|
-| `title` | Required, 3–100 characters |
-| `description` | Required, 3–1000 characters |
+| Field         | Rules                         |
+| ------------- | ----------------------------- |
+| `title`       | Required, 3–100 characters    |
+| `description` | Required, 3–1000 characters   |
 | `isCompleted` | Optional, defaults to `false` |
 
 **Response `201 Created`:** task object (same shape as items in the list above).
@@ -315,7 +315,7 @@ Content-Type: application/json
 #### Update task
 
 ```http
-PUT /api/users/{userId}/tasks/{taskId}
+PUT /api/user/tasks/{taskId}
 Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
@@ -325,7 +325,7 @@ Same body as create. **Response `200 OK`:** updated task.
 #### Delete task
 
 ```http
-DELETE /api/users/{userId}/tasks/{taskId}
+DELETE /api/user/tasks/{taskId}
 Authorization: Bearer <accessToken>
 ```
 
@@ -352,13 +352,13 @@ Errors return a consistent JSON shape:
 }
 ```
 
-| HTTP Status | When |
-|-------------|------|
-| `400` | Validation failure, invalid JSON, missing body |
-| `401` | Missing/invalid token, bad login, expired refresh token |
-| `404` | User or task not found |
-| `409` | Email already exists on signup |
-| `500` | Unexpected server error |
+| HTTP Status | When                                                    |
+| ----------- | ------------------------------------------------------- |
+| `400`       | Validation failure, invalid JSON, missing body          |
+| `401`       | Missing/invalid token, bad login, expired refresh token |
+| `404`       | User or task not found                                  |
+| `409`       | Email already exists on signup                          |
+| `500`       | Unexpected server error                                 |
 
 ---
 
@@ -412,12 +412,12 @@ src/main/java/org/example/task_management_rest_api/
 
 ### Layer responsibilities
 
-| Layer | Responsibility |
-|-------|----------------|
-| **Controller** | HTTP, status codes, maps DTOs ↔ entities |
-| **Service** | Business rules, works with entities |
-| **Repository** | Database access |
-| **Security** | JWT creation/validation, filter chain, refresh token lifecycle |
+| Layer          | Responsibility                                                 |
+| -------------- | -------------------------------------------------------------- |
+| **Controller** | HTTP, status codes, maps DTOs ↔ entities                       |
+| **Service**    | Business rules, works with entities                            |
+| **Repository** | Database access                                                |
+| **Security**   | JWT creation/validation, filter chain, refresh token lifecycle |
 
 ---
 
@@ -429,18 +429,18 @@ curl -s -X POST http://localhost:8080/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@example.com","password":"secret123"}'
 
-# 2. Save accessToken from response, then get your user id
+# 2. Save accessToken from response
 curl -s http://localhost:8080/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 
-# 3. Create a task (use id from /me as userId)
-curl -s -X POST http://localhost:8080/api/users/1/tasks \
+# 3. Create a task
+curl -s -X POST http://localhost:8080/api/user/tasks \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title":"Buy groceries","description":"Milk and eggs","isCompleted":false}'
 
 # 4. List tasks
-curl -s "http://localhost:8080/api/users/1/tasks?page=0&size=10" \
+curl -s "http://localhost:8080/api/user/tasks?page=0&size=10" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 

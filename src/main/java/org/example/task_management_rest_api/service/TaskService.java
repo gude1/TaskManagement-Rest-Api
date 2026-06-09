@@ -19,35 +19,33 @@ public class TaskService {
         this.userService = userService;
     }
 
-    public Page<Task> getAllTasksByUserId(Long userId, Pageable pageable) {
-        userService.getUserById(userId);
+    public Page<Task> getAllTasks(Pageable pageable) {
+        Long userId = userService.getCurrentUser().getId();
         return taskRespository.findByUser_Id(userId, pageable);
     }
 
-    public Task getTaskById(Long userId, Long taskId) {
-        userService.getUserById(userId);
+    public Task getTaskById(Long taskId) {
+        Long userId = userService.getCurrentUser().getId();
         return taskRespository.findByIdAndUser_Id(taskId, userId)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found"));
     }
 
-    public Task createTask(Long userId, Task task) {
-        User user = userService.getUserById(userId);
+    public Task createTask(Task task) {
+        User user = userService.getCurrentUser();
         task.setUser(user);
         return taskRespository.save(task);
     }
 
-    public Task updateTask(Long userId, Long taskId, Task task) {
-        Task existingTask = taskRespository.findByIdAndUser_Id(taskId, userId)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+    public Task updateTask(Long taskId, Task task) {
+        Task existingTask = getTaskById(taskId);
         existingTask.setTitle(task.getTitle());
         existingTask.setDescription(task.getDescription());
         existingTask.setCompleted(task.isCompleted());
         return taskRespository.save(existingTask);
     }
 
-    public void deleteTask(Long userId, Long taskId) {
-        Task existingTask = taskRespository.findByIdAndUser_Id(taskId, userId)
-                .orElseThrow(() -> new TaskNotFoundException("Task not found"));
+    public void deleteTask(Long taskId) {
+        Task existingTask = getTaskById(taskId);
         taskRespository.delete(existingTask);
     }
 }

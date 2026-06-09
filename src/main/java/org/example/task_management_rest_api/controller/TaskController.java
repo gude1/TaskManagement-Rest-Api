@@ -21,7 +21,7 @@ import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/users/{userId}/tasks")
+@RequestMapping("/api/user/tasks")
 public class TaskController {
 
     private final TaskService taskService;
@@ -32,41 +32,37 @@ public class TaskController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<TaskResponse>> getAllTasks(
-            @PathVariable Long userId,
             @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         PagedResponse<TaskResponse> response = PagedResponse.from(
-                taskService.getAllTasksByUserId(userId, pageable),
+                taskService.getAllTasks(pageable),
                 TaskResponse::new);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{taskId}")
-    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long userId, @PathVariable Long taskId) {
-        return ResponseEntity.ok(new TaskResponse(taskService.getTaskById(userId, taskId)));
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long taskId) {
+        return ResponseEntity.ok(new TaskResponse(taskService.getTaskById(taskId)));
     }
 
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask(
-            @PathVariable Long userId,
-            @Valid @RequestBody CreateTaskRequest request) {
+    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody CreateTaskRequest request) {
         Task task = toTask(request);
-        Task saved = taskService.createTask(userId, task);
+        Task saved = taskService.createTask(task);
         return ResponseEntity.status(HttpStatus.CREATED).body(new TaskResponse(saved));
     }
 
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(
-            @PathVariable Long userId,
             @PathVariable Long taskId,
             @Valid @RequestBody CreateTaskRequest request) {
         Task task = toTask(request);
-        Task updated = taskService.updateTask(userId, taskId, task);
+        Task updated = taskService.updateTask(taskId, task);
         return ResponseEntity.ok(new TaskResponse(updated));
     }
 
     @DeleteMapping("/{taskId}")
-    public ResponseEntity<String> deleteTask(@PathVariable Long userId, @PathVariable Long taskId) {
-        taskService.deleteTask(userId, taskId);
+    public ResponseEntity<String> deleteTask(@PathVariable Long taskId) {
+        taskService.deleteTask(taskId);
         return ResponseEntity.ok("Task deleted successfully: " + taskId);
     }
 
